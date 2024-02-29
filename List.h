@@ -40,7 +40,7 @@ size_t List_size(const List* list);
  * Inserts an element in the begining of the list.
  */
 
-void List_insertLast(List* list,float data,size_t weight);
+void List_insertLast(List* list, double data, size_t weight);
 
 /*
  * Prints the list to the standard output.
