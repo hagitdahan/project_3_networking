@@ -40,6 +40,7 @@ int rudp_receiveACK(int socket,struct sockaddr_in* srcAddress){
     if(buffer.flags == 'A'){
         return 1;
     }
+    return 0;
 }
 
 /**
@@ -170,7 +171,7 @@ int rudp_sendACK(int socket,struct sockaddr_in* destAddress){
  * recieve data from sender and sends ack
  * @param socket
  * @param senderAddress
- * @return -1: failure, 0: exit message, -2: EOF, >0:Data
+ * @return -1: failure, 0: exit message, -2: EOF, -3:bad packet >0:Data
  */
 int rudp_receive(int socket,struct sockaddr_in* senderAddress){
     Message buffer;
@@ -186,7 +187,7 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
     }
 
     int ACKResult;
-    // What Data did I get?
+
     switch (buffer.flags) {
 
         case 'S':
@@ -217,8 +218,8 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
                 return buffer.length;
             }
             else{
-                printf("Packet is not OK\n");
-                return -1;
+                printf("Packet is not OK not sending ACK\n");
+                return -3;
             }
     }
     return -1;

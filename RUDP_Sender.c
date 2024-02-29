@@ -1,8 +1,21 @@
 #include "RUDP_API.h"
-#include "RUDP.c"
+//#include "RUDP.c"
 
+int main(int argc,char** argv) {
+    int port = DEFAULT_PORT;
+    char* receiver_ip = DEFAULT_IP;
+    for(int i=0;i<argc;i++) {
+        if (strcmp("-p", argv[i]) == 0 && i + 1 < argc) {
+            port = atoi(argv[i + 1]);
+        } else if (strcmp("-ip", argv[i]) == 0) {
+            size_t len = strlen(argv[i + 1]);
+           char* new_ip = (char*) malloc(sizeof(char)*len+1);
+            strcpy(new_ip, argv[i + 1]);
+            receiver_ip = new_ip;
+        }
+    }
 
-int main() {
+    printf("Receiver IP: %s, Port: %d\n",receiver_ip,port);
     //1) Read the created file.
     char *file = util_generate_random_data(20030500);
     int fileSize = strlen(file);
@@ -24,8 +37,8 @@ int main() {
     struct sockaddr_in receiverAddress;
     memset(&receiverAddress, 0, sizeof(receiverAddress));
     receiverAddress.sin_family = AF_INET;
-    receiverAddress.sin_port = htons(DEFAULT_PORT);
-    int rval = inet_pton(AF_INET, (const char *)DEFAULT_IP, &receiverAddress.sin_addr);
+    receiverAddress.sin_port = htons(port);
+    int rval = inet_pton(AF_INET, (const char *)receiver_ip, &receiverAddress.sin_addr);
     if (rval <= 0) {
         printf("inet_pton() failed");
         return -1;

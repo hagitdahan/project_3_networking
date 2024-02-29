@@ -1,10 +1,18 @@
 #include "RUDP_API.h"
-#include "RUDP.c"
 #include "List.h"
-#include "List.c"
+//#include "List.c"
+//#include "RUDP.c"
 
-int main() {
 
+int main(int argc,char** argv) {
+    int port = DEFAULT_PORT;
+    for(int i=0;i<argc;i++) {
+        if (strcmp("-p", argv[i]) == 0 && i + 1 < argc) {
+            port = atoi(argv[i + 1]);
+        }
+    }
+
+    printf("Working on Port: %d\n",port);
     List* list = List_alloc();
     //1) Create a UDP connection between the Receiver and the Sender.
     int receiver_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -16,7 +24,7 @@ int main() {
     struct sockaddr_in receiverAddress;
     memset((char *)&receiverAddress, 0, sizeof(receiverAddress));
     receiverAddress.sin_family = AF_INET;
-    receiverAddress.sin_port = htons(DEFAULT_PORT);
+    receiverAddress.sin_port = htons(port);
     int ret = inet_pton(AF_INET, (const char *)DEFAULT_IP, &(receiverAddress.sin_addr));
     if (ret <= 0) {
         printf("inet_pton() failed\n");
@@ -24,7 +32,6 @@ int main() {
     }
 
     struct sockaddr_in senderAddress;
-    socklen_t clientAddressLen = sizeof(senderAddress);
     memset((char *)&senderAddress, 0, sizeof(senderAddress));
 
     printf("Starting Receiver...\n");
@@ -53,7 +60,7 @@ int main() {
         while (1) {
 
             int receiveResult = rudp_receive(receiver_socket, &senderAddress);
-            if(receiveResult > 1){totalBytes+=receiveResult;}
+            if(receiveResult > 0){totalBytes+=receiveResult;}
 
             if (receiveResult == -1) { return -1; }
             else if (receiveResult == 0) {
