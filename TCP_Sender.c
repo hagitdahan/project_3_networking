@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <time.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +14,8 @@
 #define DEFAULT_RECEIVER_PORT 4444
 #define DEFAULT_RECEIVER_IP_ADDRESS "127.0.0.1"
 #define DEFAULT_CC_ALGORITHM "reno"
-#define FILE_NAME "File.txt"
+#define FILE_SIZE 2000000
+
 
 
 
@@ -56,31 +58,31 @@ int main(int argc,char** argv) {
 
 
     //1.Read the created file.
-    FILE* file = fopen(FILE_NAME,"r");
+    //FILE* file = fopen(FILE_NAME,"r");
     // calculating the size of the file
-    fseek(file, 0L, SEEK_END);
-    long int filesize = ftell(file);
+    //fseek(file, 0L, SEEK_END);
+    //long int filesize = ftell(file);
+    //printf("%d",filesize);
+    
 
-    int resend=1;
+    //Create a TCP socket between the Sender and the Receiver.
+    //Create socket
+    int sender_socket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    // if cant create socket return error
+    if(sender_socket == -1){
+                printf("socket() failed");
+        return -1;
+    }
 
-    while(1) {
-        //Create a TCP socket between the Sender and the Receiver.
-        //Create socket
-        int sender_socket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-        // if cant create socket return error
-        if(sender_socket < 0){
-            printf("socket() failed");
-            return -1;
-        }
-
-        int reuseAddr = 1;
-    #ifdef TCP_CONGECTION
-        int sockOpt = setsockopt(sender_socket, SOL_SOCKET, TCP_CONGECTION, algo, sizeof(char)*strlen(algo));
-    #else
-        int sockOpt = setsockopt(sender_socket, IPPROTO_TCP, SO_REUSEADDR, &reuseAddr, sizeof(int));
-    #endif
-        if (sockOpt < 0) {
+    
+    //setting TCP_CONGECTION
+    int sockOpt = setsockopt(sender_socket, IPPROTO_TCP, TCP_CONGESTION, algo,strlen(algo)+1);
+    //#else
+    //    int sockOpt = setsockopt(sender_socket, IPPROTO_TCP, SO_REUSEADDR, &reuseAddr, sizeof(int));
+    //#endif
+        if (sockOpt ==-1) {
             printf("setsockopt() failed with error code : %d", errno);
+            close(sender_socket);
             return 1;
         }
 
@@ -95,46 +97,44 @@ int main(int argc,char** argv) {
         int set_ip = inet_pton(AF_INET,reciver_ip,&receiver_address.sin_addr);
         // if conversion failed return error
         if (set_ip == -1){
-            printf("ibet_pton() failed");
+            printf("inet_pton() failed");
             return -1;
         }
 
         // connect to receiver
-//        printf("Try to connect to receiver...\n");
+        printf("Try to connect to receiver...\n");
         int connection = connect(sender_socket, (struct sockaddr *) &receiver_address, sizeof(receiver_address));
         // if connection failed close socket and return error
         if (connection == -1) {
-            printf("connect() failed");
+            perror("connect(2)");
             close(sender_socket);
             return -1;
         }
-//        printf("Connection successful!\n");
-
-        //Send the file if sender user wants
-        if(resend) {
-            int send_msg1 = send(sender_socket, file, sizeof(char)*filesize, 0);
-            if (send_msg1 < -1) {
+        printf("Connection successful!\n");
+        int choice=1;
+        while(choice){
+            char * file=util_generate_random_data(FILE_SIZE);
+            int len_message=FILE_SIZE;
+            int send_msg1 = send(sender_socket, file, len_message, 0);
+            printf("Sent %d Bytes\n", send_msg1);
+            if (send_msg1 == -1) {
                 printf("send() failed");
                 close(sender_socket);
                 return -1;
             }
-            printf("Sent %d Bytes\n", send_msg1);
-            //Send an exit message to the receiver
-            // Close the TCP connection
-            close(sender_socket);
+            //let the receiver know that the file is over
+            int send_eof=send(sender_socket,"DONE",strlen("DONE"),0);
+            //printf("Sent %d Bytes\n", send_eof);
+            free(file);
+             //User decision: Send the file again?
+            printf("Resend file press 1 if yes 0 if not?\n");
+            scanf("%d", &choice);
         }
-        // if user desicion is not to send the file close socket
-        else{
-            close(sender_socket);
-//            printf("Sent Exit messege\n");
-            break;
-        }
+        //Send an exit message to the receiver
+        int send_exit=send(sender_socket,"Exit",5,0);
+        
+        // Close the TCP connection
+        close(sender_socket);     
 
-        //User decision: Send the file again?
-        printf("Resend file?\n");
-        scanf("%d", &resend);
-        }
-
-    //Exit.
     return 0;
 }

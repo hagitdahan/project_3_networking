@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/time.h>
 #include "List.h"
 
 
@@ -17,7 +16,10 @@
 #define DEFAULT_CC_ALGORITHM "reno"
 #define BUFFER_SIZE 4096
 
+
 int main(int argc,char** argv) {
+    clock_t start,end;
+    double cpu_time_use;
     int reciver_port = DEFAULT_RECEIVER_PORT;
     char* algo = DEFAULT_CC_ALGORITHM;
     for(int i=0;i<argc;i++){
@@ -54,17 +56,18 @@ int main(int argc,char** argv) {
         return 1;
     }
 
-    //Resue the address if the receiver socket on was closed
-    int reuseAddr = 1;
-    #ifdef TCP_CONGECTION
-    int sockOpt = setsockopt(receiver_socket, SOL_SOCKET, TCP_CONGECTION, algo, sizeof(char)*strlen(algo));
-    #else
-    int sockOpt = setsockopt(receiver_socket, IPPROTO_TCP, SO_REUSEADDR, &reuseAddr, sizeof(int));
-    #endif
+    // //Resue the address if the receiver socket on was closed
+    // int reuseAddr = 1;
+    // #ifdef TCP_CONGECTION
+    int sockOpt = setsockopt(receiver_socket, IPPROTO_TCP, TCP_CONGESTION, algo, sizeof(char)*strlen(algo));
+    // #else
+    // int sockOpt = setsockopt(receiver_socket, IPPROTO_TCP, SO_REUSEADDR, &reuseAddr, sizeof(int));
+    // #endif
     if (sockOpt < 0) {
-        printf("setsockopt() failed with error code : %d", errno);
-        return 1;
-    }
+         printf("setsockopt() failed with error code : %d", errno);
+         close(receiver_socket);
+         return 1;
+     }
 
     //create receiver address struct and initialize it with 0's
     struct sockaddr_in receiver_address;
@@ -77,7 +80,7 @@ int main(int argc,char** argv) {
 
     //bind the receiver socket to port and address
     int socketBind = bind(receiver_socket, (struct sockaddr *) &receiver_address, sizeof(receiver_address));
-    if (socketBind < 0) {
+    if (socketBind <0) {
         printf("bind() failed");
         close(receiver_socket);
         return -1;
@@ -85,7 +88,7 @@ int main(int argc,char** argv) {
 
     // listen for 1 connection
     int socketListen = listen(receiver_socket, 1);
-    if (socketListen < 0) {
+    if (socketListen ==-1) {
         printf("listen() failed");
         close(receiver_socket);
         return -1;
@@ -99,59 +102,60 @@ int main(int argc,char** argv) {
     memset(&sender_address, 0, sizeof(sender_address));
     sender_address_len = sizeof(sender_address);
 
-    struct timeval start,stop;
-
-    // Loop for getting the sender requests to send file
-    while(1) {
-
-        printf("Waiting for TCP connection...\n");
-        //Get a connection from the sender.
-        int sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_address, &sender_address_len);
-        if (sender_socket < 0) {
+     printf("Waiting for TCP connection...\n");
+    //Get a connection from the sender.
+    int sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_address, &sender_address_len);
+    if (sender_socket < 0) {
             printf("accept() failed");
             close(receiver_socket);
             return -1;
         }
 
-        printf("Sender connected, beginning to receive file...\n");
-        char buffer[BUFFER_SIZE];
-        memset(buffer, 0, BUFFER_SIZE);
+    printf("Sender connected, beginning to receive file...\n");
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    int run=1;
 
+    // Loop for getting the sender requests to send file
+    while(run) {
         long int amount_of_data=0;
-        gettimeofday(&start, NULL);
+        start=clock();
+        int byte_recv=1;
 
         // Loop for a smaller buffer then the file
-        while (1) {
-
-            int dataReceived = recv(sender_socket, buffer, BUFFER_SIZE, 0);
-            amount_of_data += dataReceived;
-            memset(buffer, 0, BUFFER_SIZE);
-
-            if (dataReceived < 0) {
-                printf("recv() failed");
-                close(receiver_socket);
-                close(sender_socket);
-                return -1;
-            }
-
-            // if sender stopped sending data, the file transfer completed
-            if (dataReceived == 0) {
-                close(sender_socket);
+        while (byte_recv) {
+            byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
+            amount_of_data += byte_recv;
+            if(byte_recv==0||strncmp(buffer,"DONE",sizeof("DONE"))==0){
+                amount_of_data-=sizeof("DONE")-1;
+                break;
+            } 
+            
+            if(strcmp(buffer,"Exit")==0){
+                run=0;
                 break;
             }
+            memset(buffer, 0, BUFFER_SIZE);
+            
+        }
+        end=clock();
+        
+        if (byte_recv < 0) {
+            printf("recv() failed");
+            close(receiver_socket);
+            close(sender_socket);
+            return -1;
         }
 
-        gettimeofday(&stop, NULL);
-
-        // if no data is sent then sender closed the connection instead of passing data
-        if(amount_of_data == 0){
-            printf("Sender sent an exit messege\n");
-            break;
+        cpu_time_use=((float) (end-start))/CLOCKS_PER_SEC;
+        //if(run && amount_of_data==2000000 ){
+        if(run ){
+            List_insertLast(intervals, cpu_time_use, amount_of_data);
+            printf("File transfer completed. size: %ld\n",amount_of_data);
         }
 
-        printf("File transfer completed. size: %ld\n",amount_of_data);
-        float interval = (float) ((stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec) / 1000;
-        List_insertLast(intervals, interval, amount_of_data);
+        
+        
     }
 
     //Print out the times (in milliseconds), and the average bandwidth for each time the file was received.
