@@ -114,51 +114,72 @@ int main(int argc,char** argv) {
     printf("Sender connected, beginning to receive file...\n");
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
-    int run=1;
 
     // Loop for getting the sender requests to send file
     int measureTime = 1;
-    while(run) {
+    int exitMessage = 0;
+
+    while(!exitMessage) {
+        
         int amount_of_data=0;
         if(measureTime){gettimeofday(&start,NULL);}
-        int byte_recv=1;
 
         // Loop for a smaller buffer then the file
-        while (byte_recv) {
-            byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
+        while (1) {
+            int byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
+
+            if(byte_recv < 0){
+                printf("recv() failed");
+                close(receiver_socket);
+                return -1;
+            }
+
             amount_of_data += byte_recv;
         
             if(buffer[byte_recv-2]==EOF){
                 amount_of_data-=2;
                 break;
             }
-            if(byte_recv==0){
-                break;
-            } 
-            
+
             if(strcmp(buffer,"Exit")==0){
-                run=0;
+                printf("Sent exit message\n");
+                exitMessage=1;
                 break;
             }
+
+            if(byte_recv==0){
+                printf("Sender Disconnected!");
+                close(receiver_socket);
+                return -1;
+            } 
+            
             memset(buffer, 0, BUFFER_SIZE);
             
         }
+
         if(measureTime){
             gettimeofday(&end,NULL);
             float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
             List_insertLast(intervals, interval_in_seconds, amount_of_data);
             printf("File transfer completed. size: %d\n",amount_of_data);
+            
             memset(buffer,0,strlen(buffer));
             int recvChocie = recv(sender_socket, buffer, 2, 0);
+            
             if(recvChocie < 0){
                 printf("recv() failed;\n");
                 return -1;
             }
         
-            else if(buffer[0]=='n'){
+        
+            if(buffer[0]=='n'){
+                printf("The sender stopped sending file...\n");
                 measureTime=0;
-                break;
+                
             }
+            else{
+                printf("The sender started sending file...");  
+            }        
         
         
         }        

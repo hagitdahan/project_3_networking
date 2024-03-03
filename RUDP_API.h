@@ -13,7 +13,7 @@
 #define DEFAULT_IP "127.0.0.1"
 #define DEFAULT_PORT 5060
 #define BUFFER_SIZE 4096
-#define MESSAGE_SIZE 3700
+#define MESSAGE_SIZE 2048
 
 
 typedef struct MessageHeader Message;

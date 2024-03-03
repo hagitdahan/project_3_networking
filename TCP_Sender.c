@@ -57,14 +57,6 @@ int main(int argc,char** argv) {
     printf("----------Starting Sender-------------\n");
 
 
-    //1.Read the created file.
-    //FILE* file = fopen(FILE_NAME,"r");
-    // calculating the size of the file
-    //fseek(file, 0L, SEEK_END);
-    //long int filesize = ftell(file);
-    //printf("%d",filesize);
-    
-
     //Create a TCP socket between the Sender and the Receiver.
     //Create socket
     int sender_socket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
