@@ -121,19 +121,19 @@ int main(int argc,char** argv) {
 
     while(!exitMessage) {
         
+        // if measure data is 0 dont start timer
         int amount_of_data=0;
         if(measureTime){gettimeofday(&start,NULL);}
 
         // Loop for a smaller buffer then the file
         while (1) {
             int byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
-
             if(byte_recv < 0){
                 printf("recv() failed");
                 close(receiver_socket);
                 return -1;
             }
-
+            // count amount of data received
             amount_of_data += byte_recv;
         
             if(buffer[byte_recv-2]==EOF){
@@ -141,12 +141,14 @@ int main(int argc,char** argv) {
                 break;
             }
 
-            if(strcmp(buffer,"Exit")==0){
-                printf("Sent exit message\n");
+            // if sender sent an exit message 
+            if(strcmp(buffer,"Exit")==0 || strcmp(buffer," Exit")==0){
+                printf("Sender sent exit message...\n");
                 exitMessage=1;
                 break;
             }
 
+            // if sender disconnected
             if(byte_recv==0){
                 printf("Sender Disconnected!");
                 close(receiver_socket);
@@ -157,12 +159,13 @@ int main(int argc,char** argv) {
             
         }
 
+        // if measure time then calculate the interval, add to list and recevie the choice of sender
         if(measureTime){
             gettimeofday(&end,NULL);
             float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
             List_insertLast(intervals, interval_in_seconds, amount_of_data);
-            printf("File transfer completed. size: %d\n",amount_of_data);
-            
+            printf("File transfer completed.\n");
+            printf("Waiting for sender response...\n");
             memset(buffer,0,strlen(buffer));
             int recvChocie = recv(sender_socket, buffer, 2, 0);
             
@@ -171,14 +174,14 @@ int main(int argc,char** argv) {
                 return -1;
             }
         
-        
+            // if the choice is n = no then dont measure next time
             if(buffer[0]=='n'){
                 printf("The sender stopped sending file...\n");
                 measureTime=0;
                 
             }
             else{
-                printf("The sender started sending file...");  
+                printf("The sender started sending file...\n");  
             }        
         
         

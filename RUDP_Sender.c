@@ -1,7 +1,7 @@
 #include "RUDP_API.h"
 #include "Random_Data_Generator.h"
 //#include "RUDP.c"
-#define FILE_SIZE 2000000
+#define FILE_SIZE 20000000
 
 int main(int argc,char** argv) {
     int port = DEFAULT_PORT;
@@ -19,9 +19,6 @@ int main(int argc,char** argv) {
 
     printf("Receiver IP: %s, Port: %d\n",receiver_ip,port);
     //1) Read the created file.
-    // char *file = util_generate_random_data(2000000);
-    // int fileSize = strlen(file);
-    // printf("%d",fileSize);
     char * file=util_generate_random_data(FILE_SIZE);
     int fileSize=FILE_SIZE;
 
@@ -33,9 +30,10 @@ int main(int argc,char** argv) {
         return -1;
     }
 
+    // Create a timeout of receive in sender socket
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 100000;
+    timeout.tv_usec = 1000;
 
     setsockopt(sender_socket,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
 
@@ -51,6 +49,7 @@ int main(int argc,char** argv) {
     struct sockaddr_in fromAddress;
     memset((char *)&fromAddress, 0, sizeof(fromAddress));
 
+    // Connecet to receiver
     printf("Sending connect message to receiver\n");
     int connectionResult = rudp_connect(sender_socket,&receiverAddress,&fromAddress);
     if(connectionResult <= 0){
@@ -61,9 +60,11 @@ int main(int argc,char** argv) {
 
     //3) Send the file via the RUDP protocol
     int userChoice = 1;
+    
     while(userChoice) {
         printf("Sending file...\n");
-
+        
+        // Send data in MESSAGE_SIZE chunks
         char data[MESSAGE_SIZE];
         int i;
         for(i=0;i+MESSAGE_SIZE<fileSize;i+=MESSAGE_SIZE) {
@@ -74,6 +75,8 @@ int main(int argc,char** argv) {
         strncpy(lastData, file+i,(fileSize-i));
         rudp_sendData(sender_socket, lastData, &receiverAddress, &fromAddress);
         free(lastData);
+
+        // Send the EOF
         char endOfFile[1] = {EOF};
         rudp_sendData(sender_socket, endOfFile, &receiverAddress, &fromAddress);
 
@@ -82,6 +85,7 @@ int main(int argc,char** argv) {
         //b. If no, continue to step 5.
         printf("Resend the file?\n");
         scanf("%d",&userChoice);
+        // If send the file again send yes else no
         if(userChoice == 1){
             int sendChoice = rudp_sendData(sender_socket,"yes",&receiverAddress, &fromAddress);
             if(sendChoice < 0){

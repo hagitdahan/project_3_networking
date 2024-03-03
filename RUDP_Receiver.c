@@ -56,15 +56,17 @@ int main(int argc,char** argv) {
 
     while(!exitMessage) {
 
+        // count the total of bytes received
         int totalBytes = 0;
-        //clock_t start = clock();
+        // if measure time then start timer
         if(measureTime){gettimeofday(&start,NULL);}
 
         while (1) {
-
+            
             int receiveResult = rudp_receive(receiver_socket, &senderAddress);
+            // if failed return -1, if got exitMessage brek, if got EOF break, if >0 is data and add it to total bytes
             if(receiveResult > 0){totalBytes+=receiveResult;}
-
+            
             if (receiveResult == -1) { return -1; }
             else if (receiveResult == 0) {
                 exitMessage = 1;
@@ -73,8 +75,8 @@ int main(int argc,char** argv) {
                 break; }
         }
 
+        // if measute time calculate the interval and add it to list
         if(measureTime) {
-//        clock_t end = clock();
             gettimeofday(&end,NULL);
             float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
             List_insertLast(list,interval_in_seconds,totalBytes);
@@ -82,6 +84,7 @@ int main(int argc,char** argv) {
             //a. If Sender resends the file, go back to step 3.
             //b. If Sender sends exit message, go to step 5.
             printf("Waiting for Sender response...\n");
+            // wait for sender response, if no then stop measure time
             int receiveChoice = rudp_receive(receiver_socket,&senderAddress);
             if(receiveChoice == -1){return -1;}
             if(receiveChoice == 2) {

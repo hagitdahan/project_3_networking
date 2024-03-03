@@ -1,9 +1,9 @@
 #include "RUDP_API.h"
 
 typedef struct MessageHeader{
-    unsigned short length;
-    unsigned short checksum;
-    char flags;//SYN/ACK/FIN
+    unsigned short length; // length of data
+    unsigned short checksum; // checksum of data
+    char flags; //SYN = S, FIN = F, ACK = A, Message = M
     char data[BUFFER_SIZE];
 }Message;
 
@@ -51,6 +51,7 @@ int rudp_receiveACK(int socket,struct sockaddr_in* srcAddress){
  * @return -1: error, 0: disconnected, 1: received
  */
 int rudp_connect(int socket,struct sockaddr_in* destAddress,struct sockaddr_in* srcAddress){
+    // create conncet message
     Message SYN;
     memset(&SYN,0,sizeof(Message));
     SYN.length=0;
@@ -58,6 +59,7 @@ int rudp_connect(int socket,struct sockaddr_in* destAddress,struct sockaddr_in* 
     SYN.checksum = 0;
     SYN.flags = 'S';
 
+    // while didnt get ack and timeout occured send again
     while(1) {
 
         int sendSYN = sendto(socket, &SYN, sizeof(Message), 0, (struct sockaddr *) destAddress, sizeof(*destAddress));
@@ -83,13 +85,14 @@ int rudp_connect(int socket,struct sockaddr_in* destAddress,struct sockaddr_in* 
  * @return -1: error, 0: disconnected, 1: received
  */
 int rudp_disconnect(int socket,struct sockaddr_in* destAddress,struct sockaddr_in* srcAddress){
+    // Create disconnect message
     Message FIN;
     memset(&FIN,0,sizeof(Message));
     FIN.length=0;
     strcpy(FIN.data,"");
     FIN.checksum = 0;
     FIN.flags = 'F';
-
+    // while didnt get ack and timeout occured send again
     while (1) {
 
         int sendFIN = sendto(socket, &FIN, sizeof(Message), 0, (struct sockaddr *) destAddress, sizeof(*destAddress));
@@ -117,13 +120,15 @@ int rudp_disconnect(int socket,struct sockaddr_in* destAddress,struct sockaddr_i
  * @return -1: failure, 1: successful, 0: sender closed
  */
 int rudp_sendData(int socket,char* data,struct sockaddr_in* destAddress,struct sockaddr_in* srcAddress){
+    // Create a data message
     Message Data;
     memset(&Data,0,sizeof(Message));
     Data.length = sizeof(char)* strlen(data);
     strcpy(Data.data,data);
     Data.checksum = calculate_checksum(Data.data,Data.length);
     Data.flags = 'M';
-
+    
+    // while didnt get ack and timeout occured send again
    while(1) {
 
        int sendData = sendto(socket, &Data, sizeof(Message), 0, (struct sockaddr *) destAddress, sizeof(*destAddress));
@@ -150,9 +155,7 @@ int rudp_sendData(int socket,char* data,struct sockaddr_in* destAddress,struct s
  * @return -1: failed\n 1: successful
  */
 int rudp_sendACK(int socket,struct sockaddr_in* destAddress){
-//    int i=0;
-//    printf("send ACK?\n");
-//    scanf("%d",&i);
+    // Create a ACK message and send it
     Message ACK;
     memset(&ACK,0,sizeof(Message));
     ACK.length=0;
@@ -177,7 +180,7 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
     Message buffer;
     memset(&buffer,0,sizeof(Message));
 
-    // Recieve Data
+    // Recieve Data from sender
     socklen_t senderAddressLen = sizeof(*senderAddress);
     int recvData = recvfrom(socket, &buffer, sizeof(buffer), 0, (struct sockaddr *)senderAddress,&senderAddressLen);
     if (recvData < 0){
@@ -187,9 +190,10 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
     }
 
     int ACKResult;
-
+    //Analyze data from sender
     switch (buffer.flags) {
-
+        
+        // if SYN save client IP and send ACK
         case 'S':
             printf("Connection request received, sending ACK.\n");
             char clientIPAddrReadable[32] = {'\0'};
@@ -198,6 +202,7 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
             if(ACKResult < 0){return -1;}
             return 1;
 
+        // if FIN send ACK
         case 'F':
             printf("Sender sent exit message.\n");
             ACKResult = rudp_sendACK(socket,senderAddress);
@@ -205,6 +210,8 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
             printf("ACK Sent. Exiting...\n");
             return 0;
 
+        // if Message check checksum, return ACK if checksum is not OK dont send ack,
+        // return -2 if got EOF 
         case 'M':
             if(buffer.checksum == calculate_checksum(buffer.data,buffer.length)){
                 ACKResult = rudp_sendACK(socket,senderAddress);
@@ -214,7 +221,7 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress){
                     printf("ACK Sent.\n");
                     return -2;
                 }
-
+                // if not EOF send the bytes received
                 return buffer.length;
             }
             else{
