@@ -1,7 +1,7 @@
 #include "RUDP_API.h"
 #include "Random_Data_Generator.h"
 //#include "RUDP.c"
-#define FILE_SIZE 200000
+#define FILE_SIZE 2000000
 
 int main(int argc,char** argv) {
     int port = DEFAULT_PORT;
@@ -34,8 +34,8 @@ int main(int argc,char** argv) {
     }
 
     struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100000;
 
     setsockopt(sender_socket,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
 

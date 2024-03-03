@@ -125,9 +125,7 @@ int main(int argc,char** argv) {
 
         // Loop for a smaller buffer then the file
         while (byte_recv) {
-            //printf("hii");
             byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
-            printf("%s",buffer);
             amount_of_data += byte_recv;
         
             if(buffer[byte_recv-2]==EOF){
@@ -151,18 +149,13 @@ int main(int argc,char** argv) {
             List_insertLast(intervals, interval_in_seconds, amount_of_data);
             printf("File transfer completed. size: %d\n",amount_of_data);
             memset(buffer,0,strlen(buffer));
-            //printf("im here");
             int recvChocie = recv(sender_socket, buffer, 2, 0);
-            //printf("%d",recvChocie);
-            //printf("%s",buffer);
             if(recvChocie < 0){
                 printf("recv() failed;\n");
                 return -1;
             }
         
             else if(buffer[0]=='n'){
-                printf("stop measure time\n");
-                //printf("%s",buffer);
                 measureTime=0;
                 break;
             }

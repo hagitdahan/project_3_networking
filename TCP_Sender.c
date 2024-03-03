@@ -14,7 +14,7 @@
 #define DEFAULT_RECEIVER_PORT 4444
 #define DEFAULT_RECEIVER_IP_ADDRESS "127.0.0.1"
 #define DEFAULT_CC_ALGORITHM "reno"
-#define FILE_SIZE 2000000
+#define FILE_SIZE 20000000
 
 
 
@@ -151,9 +151,7 @@ int main(int argc,char** argv) {
             }
         }
         //Send an exit message to the receiver
-        //printf("send exit massage\n");
         int send_exit=send(sender_socket,"Exit",5,0);
-        //printf("send exit massage after\n");
         
         
         // Close the TCP connection
