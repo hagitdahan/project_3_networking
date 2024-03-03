@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <time.h>
 #include "List.h"
+#include <sys/time.h>
 
 
 #define DEFAULT_RECEIVER_PORT 4444
@@ -18,7 +19,7 @@
 
 
 int main(int argc,char** argv) {
-    clock_t start,end;
+    struct timeval start, end;
     double cpu_time_use;
     int reciver_port = DEFAULT_RECEIVER_PORT;
     char* algo = DEFAULT_CC_ALGORITHM;
@@ -117,17 +118,23 @@ int main(int argc,char** argv) {
     int run=1;
 
     // Loop for getting the sender requests to send file
+    int measureTime = 1;
     while(run) {
         int amount_of_data=0;
-        start=clock();
+        if(measureTime){gettimeofday(&start,NULL);}
         int byte_recv=1;
 
         // Loop for a smaller buffer then the file
         while (byte_recv) {
             byte_recv= recv(sender_socket, buffer, BUFFER_SIZE, 0);
             amount_of_data += byte_recv;
-            if(byte_recv==0||strncmp(buffer,"DONE",sizeof("DONE"))==0){
-                amount_of_data-=sizeof("DONE")-1;
+        
+            if(buffer[byte_recv-2]==EOF){
+                amount_of_data-=2;
+                break;
+            }
+            if(byte_recv==0){//strncmp(buffer,"DONE",sizeof("DONE"))==0){
+                //amount_of_data-=sizeof("DONE")-1;
                 break;
             } 
             
@@ -136,9 +143,11 @@ int main(int argc,char** argv) {
                 break;
             }
             memset(buffer, 0, BUFFER_SIZE);
+            //printf("Checking if.. %s\n",buffer);
             
         }
-        end=clock();
+        
+        gettimeofday(&end,NULL);
         
         if (byte_recv < 0) {
             printf("recv() failed");
@@ -147,15 +156,27 @@ int main(int argc,char** argv) {
             return -1;
         }
 
-        cpu_time_use=((float) ((end-start))/CLOCKS_PER_SEC);
+        float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
     
         if(run ){
-            List_insertLast(intervals, cpu_time_use, amount_of_data);
-            printf("File transfer completed. size: %d\n",amount_of_data);
+            List_insertLast(intervals, interval_in_seconds, amount_of_data);
+            //printf("File transfer completed. size: %d\n",amount_of_data);
         }
 
+        memset(buffer,0,strlen(buffer));
         
+        int recvChocie = recv(sender_socket, buffer, 4, 0);
+        printf("%d",recvChocie);
+        if(recvChocie < 0){
+            printf("recv() failed;\n");
+            return -1;
+        }
         
+        if(recvChocie == 2){
+            printf("stop measure time\n");
+            measureTime=0;}
+        
+        printf("%s",buffer);        
     }
 
     //Print out the times (in milliseconds), and the average bandwidth for each time the file was received.

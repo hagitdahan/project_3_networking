@@ -1,10 +1,12 @@
 #include "RUDP_API.h"
 #include "List.h"
+#include <sys/time.h>
 //#include "List.c"
 //#include "RUDP.c"
 
 
 int main(int argc,char** argv) {
+    struct timeval start,end;
     int port = DEFAULT_PORT;
     for(int i=0;i<argc;i++) {
         if (strcmp("-p", argv[i]) == 0 && i + 1 < argc) {
@@ -55,12 +57,17 @@ int main(int argc,char** argv) {
     while(!exitMessage) {
 
         int totalBytes = 0;
-        clock_t start = clock();
+        //clock_t start = clock();
+        int rec = rudp_receive(receiver_socket,&senderAddress);
+        gettimeofday(&start,NULL);
+       // printf("%ld\n",start);
 
         while (1) {
-
+            //printf("%d\n",totalBytes);
             int receiveResult = rudp_receive(receiver_socket, &senderAddress);
-            if(receiveResult > 0){totalBytes+=receiveResult;}
+            if(receiveResult > 0){
+            
+                totalBytes+=receiveResult;}
 
             if (receiveResult == -1) { return -1; }
             else if (receiveResult == 0) {
@@ -70,10 +77,13 @@ int main(int argc,char** argv) {
                 break; }
         }
 
-        clock_t end = clock();
+        //clock_t end = clock();
+        gettimeofday(&end,NULL);
+        printf("%ld\n",end);
         if(!exitMessage) {
-            float interval_in_seconds = ((float)(end - start)/ CLOCKS_PER_SEC);
-            printf("%d\n",totalBytes);
+            //float interval_in_seconds = ((float)(end - start)/ CLOCKS_PER_SEC);
+            //printf("%d\n",totalBytes);
+            float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
             List_insertLast(list,interval_in_seconds,totalBytes);
             printf("Waiting for Sender response...\n");
             //4) Wait for Sender response:

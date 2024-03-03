@@ -18,6 +18,7 @@ char *util_generate_random_data(unsigned int size) {
     srand(time(NULL));
     for (unsigned int i = 0; i < size; i++) {
         *(buffer + i) = 'A';//((unsigned int) rand() % 256);
+
         //printf("%d, %c",i,*(buffer+i));
     }
     return buffer;

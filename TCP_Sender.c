@@ -115,8 +115,7 @@ int main(int argc,char** argv) {
         while(choice){
             char * file=util_generate_random_data(FILE_SIZE);
             int len_message=FILE_SIZE;
-            printf("%d",strlen(file));
-            int send_msg1 = send(sender_socket, file, len_message, 0);
+            int send_msg1 = send(sender_socket, file, sizeof(char)*strlen(file), 0);
             printf("Sent %d Bytes\n", send_msg1);
             if (send_msg1 == -1) {
                 printf("send() failed");
@@ -124,12 +123,32 @@ int main(int argc,char** argv) {
                 return -1;
             }
             //let the receiver know that the file is over
-            int send_eof=send(sender_socket,"DONE",strlen("DONE"),0);
+            char endOfFile[1] = {EOF};
+            int send_eof=send(sender_socket,endOfFile,2,0);
+            if(send_eof < 0){
+                printf("send() failed\n");
+                return -1;
+            }
             //printf("Sent %d Bytes\n", send_eof);
             free(file);
              //User decision: Send the file again?
             printf("Resend file press 1 if yes 0 if not?\n");
             scanf("%d", &choice);
+
+            if(choice==1) {
+                int sendsync=send(sender_socket,"yes",strlen("yes"),0);
+                if(sendsync<0){
+                    printf("send() failed\n");
+                    return -1;
+                }
+            }
+            else{
+                int sendsync=send(sender_socket,"no",strlen("no"),0);
+                if(sendsync<0){
+                    printf("send() failed\n");
+                  
+                }
+            }
         }
         //Send an exit message to the receiver
         int send_exit=send(sender_socket,"Exit",5,0);

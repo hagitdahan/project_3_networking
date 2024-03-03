@@ -34,8 +34,8 @@ int main(int argc,char** argv) {
     }
 
     struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100000;
 
     setsockopt(sender_socket,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
 
@@ -82,6 +82,7 @@ int main(int argc,char** argv) {
         //b. If no, continue to step 5.
         printf("Resend the file?\n");
         scanf("%d",&userChoice);
+        rudp_sendData(sender_socket,"C",&receiverAddress, &fromAddress);
     }
 
 
