@@ -17,7 +17,7 @@ char *util_generate_random_data(unsigned int size) {
 // Randomize the seed of the random number generator.
     srand(time(NULL));
     for (unsigned int i = 0; i < size; i++) {
-        *(buffer + i) = ((unsigned int) rand() % 256);
+        *(buffer + i) = 'A';//((unsigned int) rand() % 256);
         //printf("%d, %c",i,*(buffer+i));
     }
     return buffer;

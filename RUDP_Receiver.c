@@ -54,7 +54,7 @@ int main(int argc,char** argv) {
 
     while(!exitMessage) {
 
-        size_t totalBytes = 0;
+        int totalBytes = 0;
         clock_t start = clock();
 
         while (1) {
@@ -72,8 +72,9 @@ int main(int argc,char** argv) {
 
         clock_t end = clock();
         if(!exitMessage) {
-            double interval_in_milliseconds = ((double)(end - start)/ CLOCKS_PER_SEC)*1000.0;
-            List_insertLast(list,interval_in_milliseconds,totalBytes);
+            float interval_in_seconds = ((float)(end - start)/ CLOCKS_PER_SEC);
+            printf("%d\n",totalBytes);
+            List_insertLast(list,interval_in_seconds,totalBytes);
             printf("Waiting for Sender response...\n");
             //4) Wait for Sender response:
             //a. If Sender resends the file, go back to step 3.

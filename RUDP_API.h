@@ -35,5 +35,3 @@ int rudp_receive(int socket,struct sockaddr_in* senderAddress);
 // Other Functions
 
 unsigned short int calculate_checksum(void *data, unsigned int bytes);
-
-char *util_generate_random_data(unsigned int size);

@@ -1,5 +1,7 @@
 #include "RUDP_API.h"
+#include "Random_Data_Generator.h"
 //#include "RUDP.c"
+#define FILE_SIZE 2000000
 
 int main(int argc,char** argv) {
     int port = DEFAULT_PORT;
@@ -17,8 +19,11 @@ int main(int argc,char** argv) {
 
     printf("Receiver IP: %s, Port: %d\n",receiver_ip,port);
     //1) Read the created file.
-    char *file = util_generate_random_data(200000000);
-    int fileSize = strlen(file);
+    // char *file = util_generate_random_data(2000000);
+    // int fileSize = strlen(file);
+    // printf("%d",fileSize);
+    char * file=util_generate_random_data(FILE_SIZE);
+    int fileSize=FILE_SIZE;
 
 
     //2) Create a UDP socket between the Sender and the Receiver.

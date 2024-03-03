@@ -115,6 +115,7 @@ int main(int argc,char** argv) {
         while(choice){
             char * file=util_generate_random_data(FILE_SIZE);
             int len_message=FILE_SIZE;
+            printf("%d",strlen(file));
             int send_msg1 = send(sender_socket, file, len_message, 0);
             printf("Sent %d Bytes\n", send_msg1);
             if (send_msg1 == -1) {

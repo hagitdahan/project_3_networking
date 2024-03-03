@@ -5,7 +5,7 @@
 // Node & List Data Structures
 typedef struct _node {
     float _time;
-    size_t _weight;
+    int _weight;
     struct _node * _next;
 } Node;
 
@@ -20,7 +20,7 @@ struct _List {
 // Node implementation
 //------------------------------------------------
 
-Node* Node_alloc(float data,size_t weight,Node* next) {
+Node* Node_alloc(float data,int weight,Node* next) {
 	Node* p= (Node*)malloc(sizeof(Node));
 	p->_time= data;
     p->_weight = weight;
@@ -62,7 +62,7 @@ size_t List_size(const List* list) {
 	return list->_size;
 }
 
-void List_insertLast(List* list,float data,size_t weight){
+void List_insertLast(List* list,float data,int weight){
     Node* p = list->_head;
     if(!p){
         list ->_head = Node_alloc(data,weight,NULL);
@@ -80,8 +80,8 @@ void List_print(const List* list) {
 	const Node* p= list->_head;
     int i=0;
 	while(p) {
-        float speed = ((float)(p->_weight)/(p->_time))*0.008; // how to calculate
-		printf("- Run #%d data: Time:%fms; Speed=%fMB/s\n",i,p->_time,speed);
+        float speed = ((float)(p->_weight)*0.000001/(p->_time)); // how to calculate
+		printf("- Run #%d data: Time:%fms; Speed=%fMB/s\n",i,p->_time*1000,speed);
 		p= p->_next;
         i++;
 	}
@@ -91,7 +91,7 @@ float List_avarage_time(const List* list) {
     float result =0;
     const Node* p= list->_head;
     while(p) {
-        result+= p->_time;
+        result+= p->_time*1000;
         p= p->_next;
     }
     return result/(float)list->_size;
@@ -101,7 +101,7 @@ float List_avarage_bandwidth(const List* list) {
     float result =0;
     const Node* p= list->_head;
     while(p) {
-        float speed = ((float)(p->_weight)/(p->_time))*0.008; // how to calculate
+        float speed = ((float)(p->_weight)*0.000001/(p->_time)); // how to calculate
         result+= speed;
         p= p->_next;
     }

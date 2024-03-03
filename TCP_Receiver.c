@@ -118,7 +118,7 @@ int main(int argc,char** argv) {
 
     // Loop for getting the sender requests to send file
     while(run) {
-        long int amount_of_data=0;
+        int amount_of_data=0;
         start=clock();
         int byte_recv=1;
 
@@ -147,11 +147,11 @@ int main(int argc,char** argv) {
             return -1;
         }
 
-        cpu_time_use=((float) (end-start))/CLOCKS_PER_SEC;
-        //if(run && amount_of_data==2000000 ){
+        cpu_time_use=((float) ((end-start))/CLOCKS_PER_SEC);
+    
         if(run ){
             List_insertLast(intervals, cpu_time_use, amount_of_data);
-            printf("File transfer completed. size: %ld\n",amount_of_data);
+            printf("File transfer completed. size: %d\n",amount_of_data);
         }
 
         
