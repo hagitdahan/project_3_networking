@@ -1,7 +1,7 @@
 #include "RUDP_API.h"
 #include "Random_Data_Generator.h"
 //#include "RUDP.c"
-#define FILE_SIZE 2000000
+#define FILE_SIZE 200000
 
 int main(int argc,char** argv) {
     int port = DEFAULT_PORT;
@@ -34,8 +34,8 @@ int main(int argc,char** argv) {
     }
 
     struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100000;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
 
     setsockopt(sender_socket,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
 
@@ -82,7 +82,21 @@ int main(int argc,char** argv) {
         //b. If no, continue to step 5.
         printf("Resend the file?\n");
         scanf("%d",&userChoice);
-        rudp_sendData(sender_socket,"C",&receiverAddress, &fromAddress);
+        if(userChoice == 1){
+            int sendChoice = rudp_sendData(sender_socket,"yes",&receiverAddress, &fromAddress);
+            if(sendChoice < 0){
+                printf("send() failed\n");
+                return -1;
+            }
+        }
+
+        if(userChoice == 0){
+            int sendChoice = rudp_sendData(sender_socket,"no",&receiverAddress, &fromAddress);
+            if(sendChoice < 0){
+                printf("send() failed\n");
+                return -1;
+            }
+        }
     }
 
 

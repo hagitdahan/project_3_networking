@@ -1,12 +1,10 @@
 #include "RUDP_API.h"
 #include "List.h"
-#include <sys/time.h>
 //#include "List.c"
 //#include "RUDP.c"
 
 
 int main(int argc,char** argv) {
-    struct timeval start,end;
     int port = DEFAULT_PORT;
     for(int i=0;i<argc;i++) {
         if (strcmp("-p", argv[i]) == 0 && i + 1 < argc) {
@@ -16,6 +14,7 @@ int main(int argc,char** argv) {
 
     printf("Working on Port: %d\n",port);
     List* list = List_alloc();
+    struct timeval start,end;
     //1) Create a UDP connection between the Receiver and the Sender.
     int receiver_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (receiver_socket == -1) {
@@ -53,21 +52,18 @@ int main(int argc,char** argv) {
 
     //3) Receive the file, measure the time it took and save it.
     int exitMessage = 0;
+    int measureTime = 1;
 
     while(!exitMessage) {
 
         int totalBytes = 0;
         //clock_t start = clock();
-        int rec = rudp_receive(receiver_socket,&senderAddress);
-        gettimeofday(&start,NULL);
-       // printf("%ld\n",start);
+        if(measureTime){gettimeofday(&start,NULL);}
 
         while (1) {
-            //printf("%d\n",totalBytes);
+
             int receiveResult = rudp_receive(receiver_socket, &senderAddress);
-            if(receiveResult > 0){
-            
-                totalBytes+=receiveResult;}
+            if(receiveResult > 0){totalBytes+=receiveResult;}
 
             if (receiveResult == -1) { return -1; }
             else if (receiveResult == 0) {
@@ -77,19 +73,27 @@ int main(int argc,char** argv) {
                 break; }
         }
 
-        //clock_t end = clock();
-        gettimeofday(&end,NULL);
-        printf("%ld\n",end);
-        if(!exitMessage) {
-            //float interval_in_seconds = ((float)(end - start)/ CLOCKS_PER_SEC);
-            //printf("%d\n",totalBytes);
+        if(measureTime) {
+//        clock_t end = clock();
+            gettimeofday(&end,NULL);
             float interval_in_seconds = (float)(end.tv_sec - start.tv_sec) + (float)(end.tv_usec - start.tv_usec)/1000000;
             List_insertLast(list,interval_in_seconds,totalBytes);
-            printf("Waiting for Sender response...\n");
             //4) Wait for Sender response:
             //a. If Sender resends the file, go back to step 3.
             //b. If Sender sends exit message, go to step 5.
+            printf("Waiting for Sender response...\n");
+            int receiveChoice = rudp_receive(receiver_socket,&senderAddress);
+            if(receiveChoice == -1){return -1;}
+            if(receiveChoice == 2) {
+                printf("Sender stopping sending file...\n");
+                measureTime = 0;
+            }
+            else {
+                printf("Sender sending file again...\n");
+            }
+
         }
+
     }
     //5) Print out the times (in milliseconds), and the average
     //bandwidth for each time the file was received.
