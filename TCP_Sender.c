@@ -136,22 +136,25 @@ int main(int argc,char** argv) {
             scanf("%d", &choice);
 
             if(choice==1) {
-                int sendsync=send(sender_socket,"yes",strlen("yes"),0);
+                int sendsync=send(sender_socket,"y",strlen("y"),0);
                 if(sendsync<0){
                     printf("send() failed\n");
                     return -1;
                 }
             }
             else{
-                int sendsync=send(sender_socket,"no",strlen("no"),0);
+                int sendsync=send(sender_socket,"n",strlen("n"),0);
                 if(sendsync<0){
                     printf("send() failed\n");
-                  
                 }
+                break;
             }
         }
         //Send an exit message to the receiver
+        //printf("send exit massage\n");
         int send_exit=send(sender_socket,"Exit",5,0);
+        //printf("send exit massage after\n");
+        
         
         // Close the TCP connection
         close(sender_socket);     
