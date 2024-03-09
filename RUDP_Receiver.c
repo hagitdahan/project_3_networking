@@ -1,7 +1,6 @@
 #include "RUDP_API.h"
 #include "List.h"
-//#include "List.c"
-//#include "RUDP.c"
+
 
 
 int main(int argc,char** argv) {

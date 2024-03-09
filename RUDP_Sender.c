@@ -1,7 +1,7 @@
 #include "RUDP_API.h"
 #include "Random_Data_Generator.h"
-//#include "RUDP.c"
-#define FILE_SIZE 20000000
+
+#define FILE_SIZE 3000000
 
 int main(int argc,char** argv) {
     int port = DEFAULT_PORT;
